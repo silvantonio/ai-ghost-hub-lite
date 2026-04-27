@@ -42,9 +42,30 @@ A minimal local AI stack with workflow automation, local LLMs, and a simple dash
 
 ---
 
+
 ## ⚡ GPU Support
 
-- Set `AI_GHOST_HUB_LITE_GPU=true` in your `.env` to enable GPU for Ollama (requires NVIDIA drivers and Docker GPU support).
+To enable GPU support for Ollama (NVIDIA only):
+
+
+1. Make the script executable (if needed):
+
+   ```sh
+   chmod +x enable-gpu.sh
+   ./enable-gpu.sh
+   ```
+
+   This will detect your environment (Ubuntu, Debian, or WSL), install the NVIDIA Container Toolkit, and set `AI_GHOST_HUB_LITE_GPU=true` in your `.env` file.
+
+2. If you installed new drivers, reboot your system before starting the stack.
+
+3. Start the stack as usual:
+
+   ```sh
+   docker compose up -d
+   ```
+
+> For WSL: Make sure you have the latest NVIDIA drivers installed on Windows, then restart WSL (`wsl --shutdown`).
 
 ---
 
