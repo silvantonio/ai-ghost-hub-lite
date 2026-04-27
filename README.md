@@ -4,6 +4,7 @@ A minimal local AI stack with workflow automation, local LLMs, and a simple dash
 
 ---
 
+
 ## 🚀 Quick Start
 
 1. **Copy the environment file:**
@@ -17,13 +18,12 @@ A minimal local AI stack with workflow automation, local LLMs, and a simple dash
 2. **Start the stack:**
    
    ```sh
-   docker compose -f docker-compose.basic.yml up -d
+   docker compose up -d
    ```
 
 
-3. **Access the portal:**
 
-   - Dashboard Portal: [http://localhost:53000](http://localhost:53000)
+   - Dashboard Portal: [http://localhost:53000](http://localhost:53000) (main entrypoint)
    - n8n: [http://localhost:53001](http://localhost:53001)
    - Open WebUI: [http://localhost:53002](http://localhost:53002)
    - Ollama API: [http://localhost:53003](http://localhost:53003)
@@ -48,7 +48,8 @@ A minimal local AI stack with workflow automation, local LLMs, and a simple dash
 To enable GPU support for Ollama (NVIDIA only):
 
 
-1. Make the script executable (if needed):
+
+1. Make the script executable (if needed) and run it from the project root:
 
    ```sh
    chmod +x enable-gpu.sh
@@ -78,14 +79,15 @@ To enable GPU support for Ollama (NVIDIA only):
 ## 🧹 Stopping & Cleanup
 
 ```sh
-docker compose -f docker-compose.basic.yml down
+docker compose down
 ```
 
 ---
 
+
 ## 📁 Folder Structure
 
-- `docker-compose.basic.yml` — Main compose file
+- `docker-compose.yml` — Main compose file
 - `.env.example` — Example environment file
 - `ai-dash-hub-lite/` — Portal dashboard static files
 
