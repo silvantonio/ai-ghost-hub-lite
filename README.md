@@ -70,11 +70,7 @@ To enable GPU support for Ollama (NVIDIA only):
 
 ---
 
-## 🌐 Cloudflare Tunnel (Optional)
 
-- Set your Cloudflare Tunnel token in `.env` to expose your stack securely to the internet.
-
----
 
 ## 🧹 Stopping & Cleanup
 
