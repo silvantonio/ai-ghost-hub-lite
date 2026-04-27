@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ai-ghost-hub</title>
+  <style>
+    :root {
+      --bg:           #0d0d1a;
+      --card-bg:      #13132a;
+      --card-border:  #252545;
+      --card-active:  #1e1e42;
+      --text:         #ddddf0;
+      --text-muted:   #6666a0;
+      --accent:       #7c6fff;
+      --green:        #3ecf6e;
+      --yellow:       #f0c040;
+      --red:          #ff4a4a;
+      --btn-on:       #7c6fff;
+      --btn-off:      #1e1e3a;
+      --badge-core:        #1a2a4a;
+      --badge-core-text:   #6aabff;
+      --badge-mgmt:        #1a3a2a;
+      --badge-mgmt-text:   #4cd980;
+      --badge-ai:          #3a2a10;
+      --badge-ai-text:     #f0a040;
+      --badge-obs:         #2a1a4a;
+      --badge-obs-text:    #b080ff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    /* ── Header ─────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    header h1 .accent { color: var(--accent); }
+
+    header p {
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    /* ── Grid ────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.25rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .infra-panel {
+      max-width: 1100px;
+      margin: 1.1rem auto 0;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      background: var(--card-bg);
+      overflow: hidden;
+    }
+
+    .infra-panel summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.95rem 1.2rem;
+      font-weight: 600;
+      color: var(--text);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .infra-panel summary::-webkit-details-marker { display: none; }
+
+    .infra-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .infra-hint {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .infra-list {
+      display: grid;
+      gap: 0.65rem;
+      padding: 0.85rem 1.1rem 1rem;
+    }
+
+    .infra-item {
+      border: 1px solid var(--card-border);
+      background: #12122a;
+      border-radius: 10px;
+      padding: 0.75rem 0.85rem;
+      transition: border-color 0.2s, opacity 0.2s;
+    }
+
+    .infra-item.up {
+      border-color: #383870;
+      background: #161633;
+    }
+
+    .infra-item-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+
+    .infra-item-name {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .infra-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    /* ── Card ────────────────────────────────────── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      transition: border-color 0.25s, opacity 0.25s;
+    }
+
+    .card.up   { border-color: #383870; background: var(--card-active); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .icon { font-size: 1.35rem; line-height: 1; }
+
+    /* ── Status dot ──────────────────────────────── */
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--card-border);
+      flex-shrink: 0;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .dot.checking { background: var(--yellow); }
+    .dot.up       { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot.down     { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+    /* ── Description ─────────────────────────────── */
+    .card-desc {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      line-height: 1.55;
+      flex: 1;
+    }
+
+    .model-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.2rem;
+    }
+
+    .model-chip {
+      font-size: 0.68rem;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid #3a3a60;
+      color: #bfc3ff;
+      background: #171734;
+      white-space: nowrap;
+    }
+
+    .model-empty {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Card footer (badge + button) ────────────── */
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.2rem;
+    }
+
+    /* ── Profile badge ───────────────────────────── */
+    .badge {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 2px 9px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+    }
+    .badge-core { background: var(--badge-core); color: var(--badge-core-text); }
+    .badge-management { background: var(--badge-mgmt); color: var(--badge-mgmt-text); }
+    .badge-local-ai { background: var(--badge-ai); color: var(--badge-ai-text); }
+    .badge-observability { background: var(--badge-obs); color: var(--badge-obs-text); }
+
+    /* ── Open button ─────────────────────────────── */
+    .btn {
+      padding: 0.42rem 1rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: opacity 0.15s;
+    }
+
+    .btn-on {
+      background: var(--btn-on);
+      color: #fff;
+    }
+    .btn-on:hover { opacity: 0.82; }
+
+    .btn-off {
+      background: var(--btn-off);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    /* ── Footer ──────────────────────────────────── */
+    .page-footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 2.5rem;
+    }
+
+    .refresh-btn {
+      background: none;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      margin-left: 0.6rem;
+      transition: border-color 0.2s;
+    }
+    .refresh-btn:hover { border-color: var(--accent); color: var(--text); }
+
+    @media (max-width: 760px) {
+      body { padding: 1.2rem 1rem 3rem; }
+      header h1 { font-size: 1.6rem; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ai&#8209;ghost&#8209;<span class="accent">hub</span></h1>
+  <p>Local AI infrastructure &mdash; service dashboard</p>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<div class="page-footer">
+  <span id="last-checked">Checking services…</span>
+  <button class="refresh-btn" onclick="probeAll()">↻ Refresh</button>
+</div>
+
+<script>
+  const host = window.location.hostname;
+
+  const SERVICES = [
+    {
+      id:      'n8n',
+      name:    'n8n',
+      icon:    '🤖',
+      desc:    'Workflow automation and AI agent orchestration. Build and run multi-step agent workflows.',
+      url:     `http://${host}:5678`,
+      profile: 'core',
+      area:    'main',
+    },
+    {
+      id:      'openwebui',
+      name:    'Local AI UI',
+      icon:    '💬',
+      desc:    'Open WebUI for chatting with local Ollama models in a browser interface.',
+      url:     `http://${host}:8080`,
+      profile: 'local-ai',
+      area:    'main',
+    },
+    {
+      id:      'ollama',
+      name:    'Ollama',
+      icon:    '🦙',
+      desc:    'Local LLM model runner. Serve open-weight models on your own hardware without cloud APIs.',
+      url:     `http://${host}:11435`,
+      profile: 'local-ai',
+      area:    'infra',
+    },
+    {
+      id:      'n8n-worker',
+      name:    'n8n Worker',
+      icon:    '⚙️',
+      desc:    'Background job processor for n8n workflows.',
+      url:     `http://${host}:5678`,
+      profile: 'core',
+      area:    'infra',
+    },
+  ];
+
+  function badgeClass(profile) {
+    return `badge badge-${profile}`;
+  }
+
+  function escapeHtml(text) {
+    return text
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function renderCards() {
+    const mainServices = SERVICES.filter((s) => s.area !== 'infra');
+    document.getElementById('grid').innerHTML = mainServices.map(s => `
+      <div class="card" id="card-${s.id}">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="icon">${s.icon}</span>
+            ${s.name}
+          </div>
+          <div class="dot checking" id="dot-${s.id}" title="Checking…"></div>
+        </div>
+        <div class="card-desc">${s.desc}</div>
+        <div class="card-footer">
+          <span class="${badgeClass(s.profile)}">${s.profile}</span>
+          <a class="btn btn-off"
+             id="btn-${s.id}"
+             href="${s.url}"
+             target="_blank"
+             rel="noopener noreferrer">Open</a>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderInfraStatus() {
+    const infraServices = SERVICES.filter((s) => s.area === 'infra');
+    const html = `
+      <details class="infra-panel" open>
+        <summary>
+          <span class="infra-title">🧪 Infrastructure Status</span>
+          <span class="infra-hint">Ollama, n8n Worker</span>
+        </summary>
+        <div class="infra-list">
+          ${infraServices.map(s => `
+            <div class="infra-item down" id="infra-${s.id}">
+              <div class="infra-item-head">
+                <div class="infra-item-name">
+                  <span class="icon">${s.icon}</span>
+                  ${s.name}
+                </div>
+                <div class="infra-actions">
+                  <div class="dot checking" id="infra-dot-${s.id}" title="Checking…"></div>
+                  <a class="btn btn-off"
+                     id="infra-btn-${s.id}"
+                     href="${s.url}"
+                     target="_blank"
+                     rel="noopener noreferrer">Open</a>
+                  ${s.id === 'ollama' ? `
+                    <a class="btn btn-off" href="http://${host}:11435/" target="_blank" rel="noopener noreferrer">State</a>
+                    <a class="btn btn-off" href="http://${host}:11435/api/tags" target="_blank" rel="noopener noreferrer">Models</a>
+                    <a class="btn btn-off" href="http://${host}:11435/v1/option" target="_blank" rel="noopener noreferrer">OpenAI Models</a>
+                  ` : ''}
+                </div>
+              </div>
+              ${s.id === 'ollama' ? '<div class="model-list" id="models-ollama"><span class="model-empty">Checking models…</span></div>' : ''}
+            </div>
+          `).join('')}
+        </div>
+      </details>
+    `;
+    document.getElementById('grid').insertAdjacentHTML('afterend', html);
+  }
+
+  async function probe(service) {
+    const dot  = document.getElementById(`dot-${service.id}`);
+    const btn  = document.getElementById(`btn-${service.id}`);
+    const card = document.getElementById(`card-${service.id}`);
+    const infraDot = document.getElementById(`infra-dot-${service.id}`);
+    const infraBtn = document.getElementById(`infra-btn-${service.id}`);
+    const infraRow = document.getElementById(`infra-${service.id}`);
+
+    if (dot) {
+      dot.className  = 'dot checking';
+      dot.title      = 'Checking…';
+    }
+
+    if (infraDot) {
+      infraDot.className = 'dot checking';
+      infraDot.title = 'Checking…';
+    }
+
+    try {
+      const res = await fetch(`/probe/${service.id}`, {
+        signal: AbortSignal.timeout(3500),
+      });
+      const up = res.ok;
+      if (dot) {
+        dot.className  = up ? 'dot up'  : 'dot down';
+        dot.title      = up ? 'Running' : 'Not responding';
+      }
+      if (btn) {
+        btn.className  = up ? 'btn btn-on' : 'btn btn-off';
+      }
+      if (card) {
+        card.className = up ? 'card up' : 'card down';
+      }
+      if (infraDot) {
+        infraDot.className = up ? 'dot up' : 'dot down';
+        infraDot.title = up ? 'Running' : 'Not responding';
+      }
+      if (infraBtn) {
+        infraBtn.className = up ? 'btn btn-on' : 'btn btn-off';
+      }
+      if (infraRow) {
+        infraRow.className = up ? 'infra-item up' : 'infra-item down';
+      }
+    } catch {
+      if (dot) {
+        dot.className  = 'dot down';
+        dot.title      = 'Not available';
+      }
+      if (btn) {
+        btn.className  = 'btn btn-off';
+      }
+      if (card) {
+        card.className = 'card down';
+      }
+      if (infraDot) {
+        infraDot.className = 'dot down';
+        infraDot.title = 'Not available';
+      }
+      if (infraBtn) {
+        infraBtn.className = 'btn btn-off';
+      }
+      if (infraRow) {
+        infraRow.className = 'infra-item down';
+      }
+    }
+  }
+
+  async function loadOllamaModels() {
+    const host = document.getElementById('models-ollama');
+    if (!host) return;
+
+    try {
+      const res = await fetch('/api/ollama/models', {
+        signal: AbortSignal.timeout(3500),
+      });
+
+      if (!res.ok) {
+        host.innerHTML = '<span class="model-empty">Unable to load models</span>';
+        return;
+      }
+
+      const data = await res.json();
+      const models = Array.isArray(data.models) ? data.models : [];
+
+      if (!models.length) {
+        host.innerHTML = '<span class="model-empty">No models installed</span>';
+        return;
+      }
+
+      host.innerHTML = models
+        .map((m) => `<span class="model-chip">${escapeHtml(m.name || 'unknown')}</span>`)
+        .join('');
+    } catch {
+      host.innerHTML = '<span class="model-empty">Unable to load models</span>';
+    }
+  }
+
+  function probeAll() {
+    SERVICES.forEach(probe);
+    loadOllamaModels();
+    const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    document.getElementById('last-checked').textContent = `Last checked: ${t}`;
+  }
+
+  renderCards();
+  renderInfraStatus();
+  probeAll();
+  setInterval(probeAll, 30000);
+</script>
+
+</body>
+</html>

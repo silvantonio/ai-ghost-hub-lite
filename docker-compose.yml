@@ -1,0 +1,140 @@
+services:
+  n8n:
+    container_name: ai-ghost-hub-lite-n8n
+    image: ${N8N_IMAGE}
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=db
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8npass
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      # Default: user management enabled, onboarding required
+      - N8N_ENCRYPTION_KEY=your-strong-random-key
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "53001:5678"
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  n8n-worker:
+    container_name: ai-ghost-hub-lite-n8n-worker
+    image: ${N8N_IMAGE}
+    command: worker
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=db
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8npass
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - N8N_ENCRYPTION_KEY=your-strong-random-key
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  db:
+    container_name: ai-ghost-hub-lite-db
+    image: ${POSTGRES_IMAGE}
+    environment:
+      - POSTGRES_USER=n8n
+      - POSTGRES_PASSWORD=n8npass
+      - POSTGRES_DB=n8n
+    volumes:
+      - n8n-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    container_name: ai-ghost-hub-lite-redis
+    image: ${REDIS_IMAGE}
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+  openwebui:
+    container_name: ai-ghost-hub-lite-openwebui
+    image: ${OPENWEBUI_IMAGE}
+    ports:
+      - "53002:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      # Default: onboarding required for openwebui
+    depends_on:
+      - ollama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  ollama:
+    container_name: ai-ghost-hub-lite-ollama
+    image: ${OLLAMA_IMAGE}
+    ports:
+      - "53003:11434"
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - OLLAMA_USE_GPU=${AI_GHOST_HUB_LITE_GPU}
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  ai-dash-hub-lite:
+    image: nginx:alpine
+    container_name: ai-ghost-hub-lite-portal
+    volumes:
+      - ./ai-dash-hub-lite/index.html:/usr/share/nginx/html/index.html:ro
+      - ./ai-dash-hub-lite/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "53000:80"
+    restart: unless-stopped
+
+  ollama-model-loader:
+    image: ${OLLAMA_IMAGE}
+    container_name: ai-ghost-hub-lite-ollama-model-loader
+    environment:
+      - OLLAMA_MODELS=${OLLAMA_MODELS:-phi3:mini}
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        OLDIFS="$$IFS"
+        IFS=','
+        for model in $$OLLAMA_MODELS; do
+          IFS="$$OLDIFS"
+          model=$$(echo $$model)
+          [ -n "$$model" ] || continue
+          echo "Pulling model: $$model"
+          ollama pull "$$model" || exit 1
+          IFS=','
+        done
+
+volumes:
+  n8n-db-data:
+  redis-data:
